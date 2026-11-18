@@ -9,6 +9,7 @@
 
   <ItemGroup>
     <PackageReference Include="Avalonia" Version="12.1.6" />
+    <PackageReference Include="Avalonia.Desktop" Version="12.1.6" />
     <PackageReference Include="Avalonia.Themes.Simple" Version="12.1.6" />
     <PackageReference Include="MySql.Data" Version="26.10.0" />
   </ItemGroup>
