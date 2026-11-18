@@ -1,5 +1,6 @@
 using Avalonia;
 using Avalonia.Themes.Simple;
+using Avalonia.Controls.ApplicationLifetimes;
 
 namespace ClassAide
 {
@@ -12,6 +13,8 @@ namespace ClassAide
 
         public override void OnFrameworkInitializationCompleted()
         {
+            if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
+                desktop.MainWindow = new MainWindow();
             base.OnFrameworkInitializationCompleted();
         }
     }

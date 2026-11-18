@@ -1,11 +1,14 @@
-﻿// main entry point
+﻿using Avalonia;
+
+// main entry point
 namespace ClassAide
 {
     class Program
     {
-        static void Main(String[] args)
-        {
-            // TODO: Implement Avalonia's AppBuilder
-        }
+        [STAThread]
+        public static void Main(String[] args) =>
+            AppBuilder.Configure<App>()
+                .UsePlatformDetect()
+                .StartWithClassicDesktopLifetime(args);
     }
 }
