@@ -1,5 +1,5 @@
 ﻿// main entry point
-namespace Application
+namespace ClassAide
 {
     class Program
     {
