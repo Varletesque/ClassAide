@@ -12,6 +12,10 @@
     <PackageReference Include="Avalonia.Desktop" Version="12.1.6" />
     <PackageReference Include="Avalonia.Themes.Simple" Version="12.1.6" />
     <PackageReference Include="MySqlConnector" Version="3.0.0" />
+
+    <Content Include="classaide_schema.sql">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
 
 </Project>
