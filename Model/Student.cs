@@ -1,4 +1,4 @@
-namespace Models;
+namespace ClassAideApp.Model;
 
 public record Student(int id, String FirstName, String MiddleName, String LastName)
 {
