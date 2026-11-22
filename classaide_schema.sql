@@ -7,7 +7,7 @@ USE classaide;
 CREATE TABLE IF NOT EXISTS courses (
     id   INT UNSIGNED NOT NULL AUTO_INCREMENT,
     code VARCHAR(20)  NOT NULL,
-    name VARCHAR(150) NOT NULL,
+    `name` VARCHAR(150) NOT NULL,
     PRIMARY KEY (id),
     UNIQUE KEY uq_courses_code (code)
 ) ENGINE=InnoDB;

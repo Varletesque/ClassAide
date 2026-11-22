@@ -1,11 +1,11 @@
-using Models;
+using ClassAideApp.Model;
 
-namespace Data;
+namespace ClassAideApp.Data;
 
 public interface ICourseRepository
 {
     // course related querries
-    Task<List<Course>> GetCoursesAsync(); // returns a list of courses from the db
+    Task<List<Course>> GetAllCoursesAsync(); // returns a list of courses from the db
     Task<int> AddCourseAsync(String Code, String Name); // adds a course to the db and returns its id
     Task<bool> DeleteCourseAsync(int CourseId); // deletes a course from the db and returns feedback
 
