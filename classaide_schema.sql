@@ -1,52 +1,46 @@
--- ClassAide schema (MySQL 8+, InnoDB)
-
-CREATE DATABASE IF NOT EXISTS classaide
-    CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-USE classaide;
+-- ClassAide schema (SQLite 3)
+PRAGMA foreign_keys = ON;
 
 CREATE TABLE IF NOT EXISTS courses (
-    id   INT UNSIGNED NOT NULL AUTO_INCREMENT,
-    code VARCHAR(20)  NOT NULL,
-    name VARCHAR(150) NOT NULL,
-    PRIMARY KEY (id),
-    UNIQUE KEY uq_courses_code (code)
-) ENGINE=InnoDB;
+    id   INTEGER PRIMARY KEY AUTOINCREMENT,
+    code TEXT NOT NULL COLLATE NOCASE,
+    `name` TEXT NOT NULL,
+    CONSTRAINT uq_courses_code UNIQUE (code)
+);
 
 CREATE TABLE IF NOT EXISTS students (
-    id         INT UNSIGNED NOT NULL AUTO_INCREMENT,
-    first_name VARCHAR(100) NOT NULL,
-    middle_name VARCHAR(100) NOT NULL,
-    last_name  VARCHAR(100) NOT NULL,
-    PRIMARY KEY (id)
-) ENGINE=InnoDB;
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    first_name  TEXT NOT NULL,
+    middle_name TEXT,
+    last_name   TEXT NOT NULL
+);
 
 CREATE TABLE IF NOT EXISTS course_students (
-    course_id  INT UNSIGNED NOT NULL,
-    student_id INT UNSIGNED NOT NULL,
+    course_id  INTEGER NOT NULL,
+    student_id INTEGER NOT NULL,
     PRIMARY KEY (course_id, student_id),
-    KEY idx_course_students_student (student_id),
     CONSTRAINT fk_cs_course  FOREIGN KEY (course_id)  REFERENCES courses(id)  ON DELETE CASCADE,
     CONSTRAINT fk_cs_student FOREIGN KEY (student_id) REFERENCES students(id) ON DELETE CASCADE
-) ENGINE=InnoDB;
+);
+CREATE INDEX IF NOT EXISTS idx_course_students_student ON course_students(student_id);
 
 CREATE TABLE IF NOT EXISTS student_groups (
-    id        INT UNSIGNED NOT NULL AUTO_INCREMENT,
-    course_id INT UNSIGNED NOT NULL,
-    name      VARCHAR(100) NOT NULL,
-    PRIMARY KEY (id),
-    UNIQUE KEY uq_group_course (id, course_id),  -- lets group_members point at (group, course) together
-    KEY idx_groups_course (course_id),
+    id        INTEGER PRIMARY KEY AUTOINCREMENT,
+    course_id INTEGER NOT NULL,
+    `name`      TEXT NOT NULL,
+    CONSTRAINT uq_group_course UNIQUE (id, course_id),  -- lets group_members point at (group, course) together
     CONSTRAINT fk_group_course FOREIGN KEY (course_id) REFERENCES courses(id) ON DELETE CASCADE
-) ENGINE=InnoDB;
+);
+CREATE INDEX IF NOT EXISTS idx_groups_course ON student_groups(course_id);
 
 CREATE TABLE IF NOT EXISTS group_members (
-    group_id   INT UNSIGNED NOT NULL,
-    course_id  INT UNSIGNED NOT NULL,
-    student_id INT UNSIGNED NOT NULL,
+    group_id   INTEGER NOT NULL,
+    course_id  INTEGER NOT NULL,
+    student_id INTEGER NOT NULL,
     PRIMARY KEY (group_id, student_id),
-    KEY idx_members_student (student_id),
-    CONSTRAINT fk_member_group      FOREIGN KEY (group_id, course_id)
+    CONSTRAINT fk_member_group FOREIGN KEY (group_id, course_id)
         REFERENCES student_groups(id, course_id) ON DELETE CASCADE,
     CONSTRAINT fk_member_course_student FOREIGN KEY (course_id, student_id)
         REFERENCES course_students(course_id, student_id) ON DELETE CASCADE
-) ENGINE=InnoDB;
+);
+CREATE INDEX IF NOT EXISTS idx_members_student ON group_members(student_id);
