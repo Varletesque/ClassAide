@@ -1,7 +1,7 @@
 using ClassAideApp.Model;
 using ClassAideApp.Data;
 
-using MySqlConnector;
+using Microsoft.Data.Sqlite;
 
 namespace ClassAideApp.Repository;
 
@@ -9,66 +9,50 @@ public class CourseRepository : ICourseRepository
 {
     private readonly String _connString;
 
-    CourseRepository(String connString) => _connString = connString;
+    public CourseRepository(String connString) => _connString = connString;
 
     public async Task<List<Course>> GetAllCoursesAsync()
     {
-        var tasks = new List<Course>(); // container for returned tasks
+        var courses = new List<Course>(); // container for returned tasks
 
-        // open a connection to db
-        await using var conn = new MySqlConnection(_connString);
+        // connect to sql server
+        await using var conn = new SqliteConnection(_connString);
         await conn.OpenAsync();
+        
+        // build and send the command
+        await using var cmd = new SqliteCommand("SELECT `id`, `code`, `name` FROM courses;", conn);
+        await using var reader = await cmd.ExecuteReaderAsync(); // returns a reader to read the results
 
-        // impose query
-        const string query = "SELECT `id`, `code`, `name` FROM `courses`;"; // sql statement
-        await using var cmd = new MySqlCommand(query, conn); // build sql statement
-        await using var reader = await cmd.ExecuteReaderAsync(); // this returns a list of columns/rows
-
-        // get row index of each column
         int idOrd = reader.GetOrdinal("id");
-        int codeOrd = reader.GetOrdinal("code");
-        int nameOrd = reader.GetOrdinal("name");
+        int idCode = reader.GetOrdinal("code");
+        int idName = reader.GetOrdinal("name");
 
-        // read every row and add it on task
         while (await reader.ReadAsync())
-        {
-            tasks.Add(new Course
-            (
-                reader.GetInt32(idOrd), // id
-                reader.GetString(codeOrd), // code
-                reader.GetString(nameOrd) // name
+        {            
+            courses.Add(new Course(
+                reader.GetInt32(idOrd),
+                reader.GetString(idCode),
+                reader.GetString(idName)
             ));
         }
-        return tasks;
+        return courses;
     }
 
-    public async Task<int> AddCourseAsync(String Code, String Name)
+    public async Task AddCourseAsync(String Code, String Name)
     {
-        // open a connection to db
-        await using var conn = new MySqlConnection(_connString);
+        // connect to sql server
+        await using var conn = new SqliteConnection(_connString);
         await conn.OpenAsync();
-
-        // impose query
-        const string query = "INSERT INTO `courses` (`code`, `name`) VALUES (@code, @name);SELECT LAST_INSERT_ID();";
-        await using var cmd = new MySqlCommand(query, conn);
-        cmd.Parameters.AddWithValue("@code", Code);
-        cmd.Parameters.AddWithValue("@name", Name);
-
-        var newId = Convert.ToInt32(await cmd.ExecuteScalarAsync());
-        return newId;
+        
+        // build and send the command
+        await using var cmd = new SqliteCommand("INSERT INTO courses (`code`, `name`) VALUES ($code, $name)", conn);
+        cmd.Parameters.AddWithValue("$code", Code);
+        cmd.Parameters.AddWithValue("$name", Name);
+        await cmd.ExecuteNonQueryAsync();
     }
 
     public async Task<bool> DeleteCourseAsync(int CourseId)
     {
-        // open a connection to db
-        await using var conn = new MySqlConnection(_connString);
-        await conn.OpenAsync();
-
-        // impose query
-        const string query = "DELETE FROM `courses` WHERE `id` = @id";
-        await using var cmd = new MySqlCommand(query, conn);
-        await cmd.ExecuteNonQueryAsync();
-
         // TODO: Get boolean check if qury was a success
         return false; // temp
     }
@@ -80,7 +64,7 @@ public class CourseRepository : ICourseRepository
 
     public async Task<Student> AddStudentToCourseAsync(int CourseId, String FirstName, String? MiddleName, String LastName)
     {
-        return null;
+        return null!;
     }
 
     public async Task<bool> DeleteStudentFromCourseAsync(int CourseId, int studentId)
