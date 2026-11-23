@@ -1,7 +1,7 @@
 ﻿using Avalonia;
 
 // main entry point
-namespace ClassAide
+namespace ClassAideApp
 {
     class Program
     {
