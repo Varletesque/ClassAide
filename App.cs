@@ -21,6 +21,8 @@ class App : Application
 
             var repo = new CourseRepository(connString);
 
+            desktop.MainWindow = new MainWindow();
+
             // THIS IS A REPO TEST, TEMPORARY
             try
             {
@@ -39,8 +41,7 @@ class App : Application
             } catch (Exception ex)
             {
                 Console.WriteLine($"DATABASE FAILED: {ex.Message}");
-            }
-            desktop.MainWindow = new MainWindow();
+            }            
         }
         base.OnFrameworkInitializationCompleted();
     }
