@@ -7,7 +7,6 @@ using Avalonia.Controls.Primitives;  // ScrollBarVisibility lives here
 using Avalonia.Interactivity;        // RoutedEventArgs for Click handlers
 
 
-
 public class MainWindow : Window
 {
     // Fields for controls we need to reach from click handlers.
@@ -44,6 +43,7 @@ public class MainWindow : Window
         // Build the header and place it in row 0.
         var header = BuildHeader();
         Grid.SetRow(header, 0);          // assigns the Grid.Row attached property
+
         rootGrid.Children.Add(header);   // attach it to the Grid
 
         // ── Empty state (what shows when there are 0 classes) ────────────
@@ -152,12 +152,12 @@ public class MainWindow : Window
         // Search box — dark fill, light text, gray hint text when empty.
         var searchBox = new TextBox
         {
-            Watermark = "Search...",
+            PlaceholderText = "Search...",
             Width = 180,
             VerticalAlignment = VerticalAlignment.Center,
             Background = new SolidColorBrush(Color.Parse("#3A3A3D")),
             Foreground = new SolidColorBrush(Color.Parse("#F0F0F0")),
-            WatermarkForeground = new SolidColorBrush(Color.Parse("#A0A0A0"))
+            PlaceholderForeground = new SolidColorBrush(Color.Parse("#A0A0A0"))
         };
 
         // "Import" button — neutral dark style.
