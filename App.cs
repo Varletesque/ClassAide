@@ -20,10 +20,9 @@ class App : Application
             string connString = $"Data Source={dbPath}";
 
             var repo = new CourseRepository(connString);
-
-            // THIS IS A REPO TEST, TEMPORARY
-            desktop.MainWindow = new MainWindow();
             
+            desktop.MainWindow = new MainWindow(); 
+
             try
             {
                 await DatabaseInitializer.InitializeAsync(connString, "classaide_schema.sql");
@@ -42,7 +41,6 @@ class App : Application
             {
                 Console.WriteLine($"DATABASE FAILED: {ex.Message}");
             }
-            
         }
         base.OnFrameworkInitializationCompleted();
     }

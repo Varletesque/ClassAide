@@ -7,56 +7,51 @@ using Avalonia.Controls.Primitives;  // ScrollBarVisibility lives here
 using Avalonia.Interactivity;        // RoutedEventArgs for Click handlers
 
 
-
 public class MainWindow : Window
 {
-    // Fields for controls we need to reach from click handlers.
-    // The "?" means "may be null" — they're null until BuildLayout() runs.
-    private StackPanel? _cardsPanel;   // Holds the list of cards
-    private StackPanel? _emptyState;   // "No classes yet" block — hidden once cards exist
-
     public MainWindow()
     {
-        // Window title (shows in the OS title bar).
+        // Title shown in the OS window title bar.
         Title = "ClassAide";
 
         // Initial window size in pixels.
         Width = 400;
         Height = 600;
 
-        // Base window background — shows anywhere children don't paint over.
+        // Window background — dark theme base. Used anywhere the layout doesn't paint over it.
         Background = new SolidColorBrush(Color.Parse("#1E1E1E"));
 
-        // The whole UI tree. A Window has exactly one Content.
+        // Put the whole UI tree into the window. A Window has exactly one Content.
         Content = BuildLayout();
     }
 
-    // Builds the full screen: header on top, main area below.
+    // Builds the overall screen layout: header on top, main content below.
     private Control BuildLayout()
     {
-        // Root Grid splits the window vertically into two rows.
-        // "Auto,*" = row 0 hugs the header; row 1 takes whatever's left.
+        // Root Grid that splits the window into two vertical rows.
+        // "Auto,*" = row 0 sizes to content (header), row 1 takes the rest (main area).
         var rootGrid = new Grid
         {
             RowDefinitions = new RowDefinitions("Auto,*")
         };
 
-        // Build the header and place it in row 0.
+        // Ask BuildHeader() to build the top bar, put it in row 0, and add it to root.
         var header = BuildHeader();
         Grid.SetRow(header, 0);          // assigns the Grid.Row attached property
+
         rootGrid.Children.Add(header);   // attach it to the Grid
 
-        // ── Empty state (what shows when there are 0 classes) ────────────
-        // Vertical StackPanel, centered horizontally + vertically in its slot.
+        // Empty-state block: shown when there are no classes.
+        // Vertical StackPanel, centered both ways, with two text lines.
         var emptyState = new StackPanel
         {
-            Orientation = Orientation.Vertical,                  // stack top-to-bottom
-            Spacing = 8,                                         // 8px between children
-            HorizontalAlignment = HorizontalAlignment.Center,    // center block horizontally
-            VerticalAlignment = VerticalAlignment.Center,        // center block vertically
+            Orientation = Orientation.Vertical,                    // stack children top-to-bottom
+            Spacing = 8,                                           // 8px gap between children
+            HorizontalAlignment = HorizontalAlignment.Center,      // center the block horizontally
+            VerticalAlignment = VerticalAlignment.Center,          // center the block vertically
             Children =
             {
-                // Primary line: big, bold, light-colored.
+                // Primary line: bold, big, light-colored for dark mode.
                 new TextBlock
                 {
                     Text = "No classes yet",
@@ -65,7 +60,7 @@ public class MainWindow : Window
                     HorizontalAlignment = HorizontalAlignment.Center,
                     Foreground = new SolidColorBrush(Color.Parse("#F0F0F0"))
                 },
-                // Secondary hint line: smaller, gray.
+                // Secondary line: gray hint underneath.
                 new TextBlock
                 {
                     Text = "Click + ADD to create your first class",
@@ -75,42 +70,28 @@ public class MainWindow : Window
             }
         };
 
-        // ── Cards panel (the container that will hold class cards) ───────
-        // Starts invisible; shown on first click of + Add.
-        _cardsPanel = new StackPanel
-        {
-            Orientation = Orientation.Vertical,
-            Spacing = 12,         // 12px gap between cards
-            IsVisible = false     // hidden until there's at least one card
-        };
-
-        // ── emptyHost: a full-size Grid that fills the scroll area ───────
-        // Its only job is to give emptyState and cardsPanel a stretched parent
-        // so "Center" alignment actually has space to center *within*.
+        // A Grid with a single *-sized row and column. Its only job is to FILL the scroll area
+        // so the emptyState (which is Center-aligned) can be centered in the visible space.
         var emptyHost = new Grid
         {
-            RowDefinitions = new RowDefinitions("*"),      // single row, fills height
-            ColumnDefinitions = new ColumnDefinitions("*") // single column, fills width
+            RowDefinitions = new RowDefinitions("*"),
+            ColumnDefinitions = new ColumnDefinitions("*")
         };
 
-        // Expose the empty state via a field so the click handler can hide it.
-        _emptyState = emptyState;
-
-        // Both the empty state and the cards panel live in the SAME grid cell.
-        // They visually overlap, but IsVisible decides which one shows.
+        // Add the empty state into the host grid (one child, fills the cell).
         emptyHost.Children.Add(emptyState);
-        emptyHost.Children.Add(_cardsPanel);
 
-        // ── ScrollViewer: lets the content grow and scroll ───────────────
-        // Auto = only show a scrollbar when content overflows.
+        // ScrollViewer wraps the grid so future content (many cards) can scroll.
+        // Auto = show the scrollbar only when content overflows; hide it otherwise.
         var scroll = new ScrollViewer
         {
             Content = emptyHost,
             VerticalScrollBarVisibility = ScrollBarVisibility.Auto
         };
 
-        // ── mainContent: the big area under the header ───────────────────
-        // Background fill + 24px padding so content doesn't touch edges.
+        // The main content area (row 1) — a Border giving it a dark background + padding.
+        // Padding insets *inside* the border, so the content doesn't touch the edges.
+        // Child = scroll because a Border holds exactly one child.
         var mainContent = new Border
         {
             Background = new SolidColorBrush(Color.Parse("#252526")),
@@ -118,49 +99,50 @@ public class MainWindow : Window
             Child = scroll
         };
 
-        // Place mainContent in row 1 (the *-sized row → fills remaining height).
+        // Put mainContent into row 1 (the *-sized row → it fills the remaining height).
         Grid.SetRow(mainContent, 1);
         rootGrid.Children.Add(mainContent);
 
-        // Hand the whole tree back to the constructor, which sets Content.
+        // Hand the finished root Grid back to the constructor (which assigns it to Content).
         return rootGrid;
     }
 
-    // Builds the top header bar: title on left, actions on right.
+    // Builds the header bar: title on the left, search + buttons on the right.
     private Control BuildHeader()
     {
-        // Two-column grid:
-        //   col 0 = "Auto"  → hugs the title text
-        //   col 1 = "*"     → fills remaining width (where the buttons live)
-        // 16px left/right margin so contents don't touch the window edges.
+        // Header grid: two columns.
+        // "Auto,*" = title column hugs its text, actions column takes whatever's left.
+        // Margin (16,0,16,0) = 16px gap on left and right inside the bar.
         var headerGrid = new Grid
         {
             ColumnDefinitions = new ColumnDefinitions("Auto,*"),
             Margin = new Thickness(16, 0, 16, 0)
         };
 
-        // Left side: the title text.
+        // Left side: the app title. Bold, light color, centered vertically in the 60px bar.
         var title = new TextBlock
         {
             Text = "MY CLASSES",
             FontWeight = FontWeight.Bold,
-            VerticalAlignment = VerticalAlignment.Top,        // anchored to top...
-            Margin = new Thickness(0, 12, 0, 0),              // ...plus 12px top margin
+            VerticalAlignment = VerticalAlignment.Top,
+            Margin = new Thickness(0, 12, 0 ,0),
             Foreground = new SolidColorBrush(Color.Parse("#F0F0F0"))
         };
 
-        // Search box — dark fill, light text, gray hint text when empty.
+        // Search box on the right side of the header.
+        // Watermark = gray hint text shown when the box is empty.
+        // WatermarkForeground = the color of that hint text.
         var searchBox = new TextBox
         {
-            Watermark = "Search...",
+            PlaceholderText = "Search...",
             Width = 180,
             VerticalAlignment = VerticalAlignment.Center,
             Background = new SolidColorBrush(Color.Parse("#3A3A3D")),
             Foreground = new SolidColorBrush(Color.Parse("#F0F0F0")),
-            WatermarkForeground = new SolidColorBrush(Color.Parse("#A0A0A0"))
+            PlaceholderForeground = new SolidColorBrush(Color.Parse("#A0A0A0"))
         };
 
-        // "Import" button — neutral dark style.
+        // Import button — neutral dark style, same as the search box fill.
         var importBtn = new Button
         {
             Content = "Import",
@@ -168,9 +150,9 @@ public class MainWindow : Window
             Background = new SolidColorBrush(Color.Parse("#3A3A3D")),
             Foreground = new SolidColorBrush(Color.Parse("#F0F0F0"))
         };
-        importBtn.Click += OnImportClicked;
+        importBtn.Click += OnImportClicked; 
 
-        // "+ Add" button — green accent, the primary action.
+        // "+ Add" button — green accent, the primary action of the screen.
         var addBtn = new Button
         {
             Content = "+ Add",
@@ -179,29 +161,33 @@ public class MainWindow : Window
             Background = new SolidColorBrush(Color.Parse("#2E7D32")),
             Foreground = Brushes.White
         };
-        addBtn.Click += OnAddClicked;
 
-        // Group the three controls horizontally with 8px gaps.
-        // Right-aligned so the group hugs the right edge of its column.
-        // Bottom-aligned (with 12px bottom margin) so it sits lower in the header.
+        addBtn.Click += OnAddClicked; 
+
+        // Group the three controls in a horizontal row with 8px spacing.
+        // HorizontalAlignment.Right pushes the whole group to the right edge of its column.
         var actionsPanel = new StackPanel
         {
             Orientation = Orientation.Horizontal,
             Spacing = 8,
             HorizontalAlignment = HorizontalAlignment.Right,
             VerticalAlignment = VerticalAlignment.Bottom,
-            Margin = new Thickness(0, 0, 0, 12),
+            Margin = new Thickness (0, 0, 0, 12),
+
             Children = { searchBox, importBtn, addBtn }
         };
 
-        // Place title in col 0 and actions in col 1.
+
+        // Put the title in column 0 (the Auto column → hugs the text).
         Grid.SetColumn(title, 0);
         headerGrid.Children.Add(title);
 
+        // Put the button group in column 1 (the * column → fills remaining space, right-aligned).
         Grid.SetColumn(actionsPanel, 1);
         headerGrid.Children.Add(actionsPanel);
 
-        // Outer Border gives the header a full-width gray background + fixed height.
+        // Wrap the whole header grid in a Border so the gray background fills the full width —
+        // even the margin area outside the grid's 16px inset.
         return new Border
         {
             Background = new SolidColorBrush(Color.Parse("#2D2D30")),
@@ -210,43 +196,13 @@ public class MainWindow : Window
         };
     }
 
-    // Builds ONE card. Placeholder content — becomes the real class card later.
-    private Control BuildCard()
+        private void OnAddClicked(object? sender, RoutedEventArgs e)
     {
-        return new Border
-        {
-            Background = new SolidColorBrush(Color.Parse("#3A3A3D")),
-            CornerRadius = new CornerRadius(8),        // rounded corners
-            Padding = new Thickness(16),               // inner spacing
-            MinHeight = 60,                            // at least 60px, grows with content
-            Child = new TextBlock
-            {
-                Text = "maow",
-                FontSize = 14,
-                Foreground = new SolidColorBrush(Color.Parse("#F0F0F0"))
-            }
-        };
+        Console.WriteLine("+ Add clicked!");
     }
 
-    // Runs when "+ Add" is clicked.
-    private void OnAddClicked(object? sender, RoutedEventArgs e)
+        private void OnImportClicked(object? sender, RoutedEventArgs e)
     {
-        // Safety check: if any field is somehow null, don't crash.
-        if (_cardsPanel == null || _emptyState == null) return;
-
-        // Add a new card to the panel's children list.
-        _cardsPanel.Children.Add(BuildCard());
-
-        // Show cards, hide empty state.
-        _cardsPanel.IsVisible = true;
-        _emptyState.IsVisible = false;
-    }
-
-    // Runs when "Import" is clicked.
-    private void OnImportClicked(object? sender, RoutedEventArgs e)
-    {
-        // Temporary placeholder — writes to the debug output (not console).
-        // In VS Code, view it in the "Debug Console" panel while running with F5.
-        System.Diagnostics.Debug.WriteLine("Import clicked!");
+        Console.WriteLine("Import clicked!");
     }
 }
