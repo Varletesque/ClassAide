@@ -308,7 +308,7 @@ public class MainWindow : Window
     {
         // Temporary placeholder — writes to the debug output (not console).
         // In VS Code, view it in the "Debug Console" panel while running with F5.
-        System.Diagnostics.Debug.WriteLine("Import clicked!");
+        Console.WriteLine("Import clicked!");
     }
 }
 

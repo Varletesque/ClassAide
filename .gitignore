@@ -56,5 +56,3 @@ CodeCoverage/
 TestResult.xml
 nunit-*.xml
 
-# extras
-.vs/

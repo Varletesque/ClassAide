@@ -6,6 +6,8 @@ using Avalonia.Media;                // Brushes, SolidColorBrush, FontWeight, Co
 using Avalonia.Controls.Primitives;  // ScrollBarVisibility lives here
 using Avalonia.Interactivity;        // RoutedEventArgs for Click handlers
 
+
+
 public class MainWindow : Window
 {
     // Fields for controls we need to reach from click handlers.
