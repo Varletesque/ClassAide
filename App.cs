@@ -21,7 +21,7 @@ class App : Application
 
             var repo = new CourseRepository(connString);
             
-            desktop.MainWindow = new MainWindow(); 
+            desktop.MainWindow = new MainWindow();
 
             try
             {
@@ -35,7 +35,7 @@ class App : Application
                 Console.WriteLine($"SUCCESS! Found {courses.Count} course(s):");
                 foreach (var c in courses)
                 {
-                    Console.WriteLine($"-> ID: {c.id} | Code: {c.Code} | Name: {c.Name}");
+                    Console.WriteLine($"-> ID: {c.ID} | Code: {c.Code} | Name: {c.Name}");
                 }
             } catch (Exception ex)
             {
