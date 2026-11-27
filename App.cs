@@ -3,6 +3,7 @@ using Avalonia.Themes.Simple;
 using Avalonia.Controls.ApplicationLifetimes;
 using ClassAideApp.Repository;
 using ClassAideApp.Data;
+using ClassAideApp.ViewModel;
 
 namespace ClassAideApp;
 class App : Application
@@ -20,27 +21,35 @@ class App : Application
             string connString = $"Data Source={dbPath};Foreign Keys=True";
 
             var repo = new CourseRepository(connString);
-            
+            var vm = new CourseViewModel(repo);
+         
             desktop.MainWindow = new MainWindow();
+            
+            
+            /*
+            MANUAL TESTING OF VIEW MODEL AND REPO FUNCTIONALITY
+            */
 
-            try
+            Console.WriteLine($"Inital count: {vm.Courses.Count}");
+
+            // add a course to repo
+            vm.NewCourseCode = "TESTCODE101";
+            vm.NewCourseName = "Testing Name";
+            vm.AddCourse();
+
+            // checking results
+            Console.WriteLine(vm.StatusMessage); // Should be "Added new course..."
+            vm.LoadCourses();
+            Console.WriteLine($"Current count: {vm.Courses.Count}");
+
+            // clean up database
+            Console.WriteLine("Deleting courses");
+            foreach (var c in vm.Courses.ToList())
             {
-                await DatabaseInitializer.InitializeAsync(connString, "classaide_schema.sql");
-
-                //await repo.AddCourseAsync("TESTCODE_01", "TESTNAME_A");
-                //await repo.AddCourseAsync("TESTCODE_02", "TESTNAME_B");
-
-                var courses = repo.GetAllCourses();
-
-                Console.WriteLine($"SUCCESS! Found {courses.Count} course(s):");
-                foreach (var c in courses)
-                {
-                    Console.WriteLine($"-> ID: {c.ID} | Code: {c.Code} | Name: {c.Name}");
-                }
-            } catch (Exception ex)
-            {
-                Console.WriteLine($"DATABASE FAILED: {ex.Message}");
+                vm.DeleteCourse(c);
+                Console.WriteLine(vm.StatusMessage);
             }
+            Console.WriteLine($"Current count: {vm.Courses.Count}");
         }
         base.OnFrameworkInitializationCompleted();
     }
