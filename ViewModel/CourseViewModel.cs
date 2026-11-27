@@ -49,9 +49,10 @@ public class CourseViewModel : INotifyPropertyChanged
                 Courses.Add(c);
             }
         }
-        catch (Exception)
+        catch (Exception ex)
         {
-            StatusMessage = "No course found";
+            Console.Error.WriteLine(ex);
+            StatusMessage = "Couldn't load course";
         }
     }
 
@@ -71,8 +72,9 @@ public class CourseViewModel : INotifyPropertyChanged
             NewCourseName = string.Empty;
             StatusMessage = $"Added new course {saved.Name} {saved.Code}";
         }
-        catch (Exception)
+        catch (Exception ex)
         {
+            Console.Error.WriteLine(ex);
             StatusMessage = "Couldn't save the course";
         }
     }
@@ -84,15 +86,16 @@ public class CourseViewModel : INotifyPropertyChanged
             if(_repository.DeleteCourse(course.ID))
             {
                 Courses.Remove(course);
-                StatusMessage = $"Deleted {course.Code}";
+                StatusMessage = $"Deleted {course.Name} {course.Code}";
             }
             else
             {
                 StatusMessage = "Course not found";
             }
         }
-        catch (Exception)
+        catch (Exception ex)
         {
+            Console.Error.WriteLine(ex);
             StatusMessage = "Couldn't delete course";
         }
     }
