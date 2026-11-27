@@ -1,6 +1,6 @@
 using System.ComponentModel;
 using System.Collections.ObjectModel;
-using ClassAideApp.Repository;
+using ClassAideApp.Data;
 using ClassAideApp.Model;
 using System.Runtime.CompilerServices;
 
@@ -8,7 +8,7 @@ namespace ClassAideApp.ViewModel;
 
 public class CourseViewModel : INotifyPropertyChanged
 {
-    private readonly CourseRepository _repository;
+    private readonly ICourseRepository _repository;
     private string _newCourseCode = string.Empty;
     private string _newCourseName = string.Empty;
     private string _statusMessage = string.Empty;
@@ -35,20 +35,27 @@ public class CourseViewModel : INotifyPropertyChanged
         set {_statusMessage = value; OnPropertyChanged();}
     }
 
-    public CourseViewModel(CourseRepository repository) => _repository = repository;
+    public CourseViewModel(ICourseRepository repository) => _repository = repository;
 
     // database query and nonquery methods
-    public async Task LoadCoursesAsync()
+    public void LoadCourses()
     {
-        var courses = await _repository.GetAllCoursesAsync();
-        Courses.Clear();
-        foreach (var c in courses)
+        try
         {
-            Courses.Add(c);
+            var courses = _repository.GetAllCourses();
+            Courses.Clear();
+            foreach (var c in courses)
+            {
+                Courses.Add(c);
+            }
+        }
+        catch (Exception)
+        {
+            StatusMessage = "No course found";
         }
     }
 
-    public async Task AddCourseAsync()
+    public void AddCourse()
     {
         if (new[] {NewCourseCode, NewCourseName}.Any(s => string.IsNullOrWhiteSpace(s)))
         {
@@ -56,19 +63,38 @@ public class CourseViewModel : INotifyPropertyChanged
             return;
         }
 
-        var draft = new Course(NewCourseCode.Trim(), NewCourseName.Trim());
-        var savedCourse = await _repository.AddCourseAsync(draft);
-        Courses.Add(savedCourse);
+        try {
+            var saved = _repository.AddCourse(new Course(NewCourseCode.Trim(), NewCourseName.Trim()));
+            Courses.Add(saved);
 
-        NewCourseCode = string.Empty;
-        NewCourseName = string.Empty;
-        StatusMessage = $"Added new course {savedCourse}";
+            NewCourseCode = string.Empty;
+            NewCourseName = string.Empty;
+            StatusMessage = $"Added new course {saved.Name} {saved.Code}";
+        }
+        catch (Exception)
+        {
+            StatusMessage = "Couldn't save the course";
+        }
     }
 
-    public async Task DeleteCourseAsync(Course course)
+    public void DeleteCourse(Course course)
     {
-        await _repository.DeleteCourseAsync(course.ID);
-        Courses.Remove(course);
+        try
+        {
+            if(_repository.DeleteCourse(course.ID))
+            {
+                Courses.Remove(course);
+                StatusMessage = $"Deleted {course.Code}";
+            }
+            else
+            {
+                StatusMessage = "Course not found";
+            }
+        }
+        catch (Exception)
+        {
+            StatusMessage = "Couldn't delete course";
+        }
     }
 
     public event PropertyChangedEventHandler? PropertyChanged;
