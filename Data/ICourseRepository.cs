@@ -7,7 +7,7 @@ public interface ICourseRepository
     // course related querries
     List<Course> GetAllCourses(); // returns a list of courses from the db
     Course AddCourse(Course course); // adds a course to the db and returns its id
-    void DeleteCourse(int CourseId); // deletes a course from the db and returns feedback
+    bool DeleteCourse(int CourseId); // deletes a course from the db and returns feedback
 
     // student related querries: SPECIFIC TO THE COURSE
     List<Student> GetStudentsFromCourse(int CourseId); // returns a list of students from the db

@@ -17,7 +17,7 @@ class App : Application
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {
             string dbPath = Path.Combine(AppContext.BaseDirectory, "classaide.db");
-            string connString = $"Data Source={dbPath}";
+            string connString = $"Data Source={dbPath};Foreign Keys=True";
 
             var repo = new CourseRepository(connString);
             
@@ -30,7 +30,7 @@ class App : Application
                 //await repo.AddCourseAsync("TESTCODE_01", "TESTNAME_A");
                 //await repo.AddCourseAsync("TESTCODE_02", "TESTNAME_B");
 
-                var courses = await repo.GetAllCoursesAsync();
+                var courses = repo.GetAllCourses();
 
                 Console.WriteLine($"SUCCESS! Found {courses.Count} course(s):");
                 foreach (var c in courses)
