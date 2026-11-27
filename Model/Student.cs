@@ -1,6 +1,9 @@
 namespace ClassAideApp.Model;
 
-public record Student(int id, String FirstName, String MiddleName, String LastName)
+public record Student(int id, String FirstName, String? MiddleName, String LastName)
 {
-    public override string ToString() => $"{LastName.Trim()}, {FirstName.Trim()} {MiddleName.Trim()[0]}";
+    public override string ToString() => 
+        string.IsNullOrWhiteSpace(MiddleName)
+        ? $"{LastName.Trim()}, {FirstName.Trim()}"
+        : $"{LastName.Trim()}, {FirstName.Trim()} {LastName.Trim()[0]}";
 }

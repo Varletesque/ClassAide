@@ -11,64 +11,147 @@ public class CourseRepository : ICourseRepository
 
     public CourseRepository(String connString) => _connString = connString;
 
-    public async Task<List<Course>> GetAllCoursesAsync()
+    public List<Course> GetAllCourses()
     {
-        var courses = new List<Course>(); // container for returned tasks
+        var courses = new List<Course>(); // container for returned courses
 
-        // connect to sql server
-        await using var conn = new SqliteConnection(_connString);
-        await conn.OpenAsync();
+        // connect to sqlite db
+        using var conn = new SqliteConnection(_connString);
+        conn.Open();
         
         // build and send the command
-        await using var cmd = new SqliteCommand("SELECT `id`, `code`, `name` FROM courses;", conn);
-        await using var reader = await cmd.ExecuteReaderAsync(); // returns a reader to read the results
+        using var cmd = new SqliteCommand("SELECT `id`, `code`, `name` FROM courses;", conn);
+        using var reader = cmd.ExecuteReader(); // returns a reader to read the results
 
+        // read data
         int idOrd = reader.GetOrdinal("id");
         int idCode = reader.GetOrdinal("code");
         int idName = reader.GetOrdinal("name");
 
-        while (await reader.ReadAsync())
+        while (reader.Read())
         {            
-            courses.Add(new Course(
-                reader.GetInt32(idOrd),
+            courses.Add(new Course(                
                 reader.GetString(idCode),
-                reader.GetString(idName)
+                reader.GetString(idName),
+                reader.GetInt32(idOrd)
             ));
         }
         return courses;
     }
 
-    public async Task AddCourseAsync(String Code, String Name)
+    public Course AddCourse(Course course)
     {
-        // connect to sql server
-        await using var conn = new SqliteConnection(_connString);
-        await conn.OpenAsync();
+        // connect to sqlite db
+        using var conn = new SqliteConnection(_connString);
+        conn.Open();
         
         // build and send the command
-        await using var cmd = new SqliteCommand("INSERT INTO courses (`code`, `name`) VALUES ($code, $name)", conn);
-        cmd.Parameters.AddWithValue("$code", Code);
-        cmd.Parameters.AddWithValue("$name", Name);
-        await cmd.ExecuteNonQueryAsync();
+        using var cmd = new SqliteCommand("""
+            INSERT INTO courses (`code`, `name`)
+            VALUES ($code, $name);
+            SELECT last_insert_rowid();
+        """, conn);
+        cmd.Parameters.AddWithValue("$code", course.Code);
+        cmd.Parameters.AddWithValue("$name", course.Name);
+        var result = cmd.ExecuteScalar();
+        int newId = Convert.ToInt32(result);
+
+        return course with {ID = newId};
     }
 
-    public async Task<bool> DeleteCourseAsync(int CourseId)
+    public bool DeleteCourse(int CourseId)
     {
-        // TODO: Get boolean check if qury was a success
-        return false; // temp
+        // connect to sqlite db
+        using var conn = new SqliteConnection(_connString);
+        conn.Open();
+
+        // build and send the command
+        using var cmd = new SqliteCommand("DELETE FROM `courses` WHERE id = $id", conn);
+        cmd.Parameters.AddWithValue("$id", CourseId);
+        return cmd.ExecuteNonQuery() > 0; // returns true if there are rows affected
     }
 
-    public async Task<List<Student>> GetStudentsFromCourseAsync(int CourseId)
+    public List<Student> GetStudentsFromCourse(int CourseId)
     {
-        return null;
+        var students = new List<Student>();
+        using var conn = new SqliteConnection(_connString);
+        conn.Open();
+
+        using var cmd = new SqliteCommand("""
+            SELECT s.* 
+            FROM students s 
+            INNER JOIN course_students cs ON s.id = cs.student_id
+            WHERE cs.course_id = $CourseId;
+        """, conn);
+        cmd.Parameters.AddWithValue("$CourseId", CourseId);
+        using var reader = cmd.ExecuteReader();
+
+        int idOrd = reader.GetOrdinal("id");
+        int firstOrd = reader.GetOrdinal("first_name");
+        int middleOrd = reader.GetOrdinal("middle_name");
+        int lastOrd = reader.GetOrdinal("last_name");
+        
+        while (reader.Read())
+        {
+            students.Add(new Student(
+                reader.GetInt32(idOrd),
+                reader.GetString(firstOrd),
+                reader.IsDBNull(middleOrd) ? null : reader.GetString(middleOrd),
+                reader.GetString(lastOrd)
+            ));
+        }
+        return students;
     }
 
-    public async Task<Student> AddStudentToCourseAsync(int CourseId, String FirstName, String? MiddleName, String LastName)
+    public Student AddStudentToCourse(int CourseId, String FirstName, String? MiddleName, String LastName)
     {
-        return null!;
+        using var conn = new SqliteConnection(_connString);
+        conn.Open();
+
+        // begin a transaction to rollback when errors occur
+        using var tx = conn.BeginTransaction();
+
+        using var cmd = new SqliteCommand("""
+            INSERT INTO students (`first_name`, `middle_name`, `last_name`)
+            VALUES ($FirstName, $MiddleName, $LastName);
+            RETURNING id;
+        """, conn, tx);
+        cmd.Parameters.AddWithValue("$FirstName", FirstName);
+        // if Middlename is Null, get the actualy null value for the db
+        cmd.Parameters.AddWithValue("$MiddleName", (object?)MiddleName ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("$LastName", LastName);
+        var result = cmd.ExecuteScalar();
+        int newStudentId = Convert.ToInt32(result);
+        
+        using var cmdChild = new SqliteCommand("""
+            INSERT INTO course_students (course_id, student_id)
+            VALUES ($CourseId, $StudentId);
+        """, conn, tx);
+        cmdChild.Parameters.AddWithValue("$CourseId", CourseId);
+        cmdChild.Parameters.AddWithValue("$StudentId", newStudentId);
+        cmdChild.ExecuteNonQuery();
+        
+        tx.Commit(); // success!
+
+        return new Student(
+            newStudentId,
+            FirstName,
+            MiddleName,
+            LastName
+        );
     }
 
-    public async Task<bool> DeleteStudentFromCourseAsync(int CourseId, int studentId)
+    public bool DeleteStudentFromCourse(int CourseId, int StudentId)
     {
-        return false;
+        using var conn = new SqliteConnection(_connString);
+        conn.Open();
+
+        using var cmd = new SqliteCommand("""
+            DELETE FROM course_students
+            WHERE course_id = $CourseId AND student_id = $StudentId
+        """, conn);
+        cmd.Parameters.AddWithValue("$CourseId", CourseId);
+        cmd.Parameters.AddWithValue("$StudentId", StudentId);
+        return cmd.ExecuteNonQuery() > 0; // returns true if there are rows affected
     }
 }
